@@ -6,7 +6,9 @@ buildscript {
     repositories {
         google()
         mavenCentral()
-        maven { url 'https://jitpack.io' }
+        maven {
+            url "https://maven.scijava.org/content/repositories/public/"
+        }
     }
 
     dependencies {
@@ -19,7 +21,9 @@ rootProject.allprojects {
     repositories {
         google()
         mavenCentral()
-        maven { url 'https://jitpack.io' }
+        maven {
+            url "https://maven.scijava.org/content/repositories/public/"
+        }
     }
 }
 
