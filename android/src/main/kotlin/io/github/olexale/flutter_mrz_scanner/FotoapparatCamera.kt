@@ -97,7 +97,11 @@ class FotoapparatCamera constructor(
         val mrz = scanMRZ(cropped)
         val fixedMrz = extractMRZ(mrz)
         mainExecutor.execute {
-            messenger.invokeMethod("onParsed", fixedMrz)
+            val result = mapOf(
+                "mrz" to fixedMrz,
+                "rawMrz" to mrz
+            )
+            messenger.invokeMethod("onParsed", result)
         }
     }
 

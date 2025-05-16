@@ -73,8 +73,12 @@ public class FlutterMRZScanner: NSObject, FlutterPlatformView, MRZScannerViewDel
         return self.mrzview
     }
     
-    public func onParse(_ parsed: String?) {
-        self.channel.invokeMethod("onParsed", arguments: parsed)
+    public func onParse(_ parsed: String?, rawMrz: String?) {
+        let result = [
+            "mrz": parsed,
+            "rawMrz": rawMrz
+        ]
+        self.channel.invokeMethod("onParsed", arguments: result)
     }
     
     public func onError(_ error: String?) {

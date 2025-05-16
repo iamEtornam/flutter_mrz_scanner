@@ -44,6 +44,24 @@ class MRZScanner extends StatelessWidget {
   }
 }
 
+/// Result containing both the parsed MRZ and the raw OCR text
+class MRZScannerResult {
+  MRZScannerResult({
+    required this.mrz,
+    required this.rawMrz,
+    this.parsedMrz,
+  });
+
+  /// The extracted MRZ string
+  final String mrz;
+
+  /// The raw unprocessed OCR text
+  final String rawMrz;
+
+  /// The parsed MRZ object (if parsing was successful)
+  final MRZResult? parsedMrz;
+}
+
 class MRZController {
   MRZController._init(int id) {
     _channel = MethodChannel('mrzscanner_$id');
@@ -53,6 +71,9 @@ class MRZController {
   late final MethodChannel _channel;
 
   void Function(MRZResult mrz)? onParsed;
+
+  /// New callback with both the processed MRZ and raw OCR text
+  void Function(MRZScannerResult result)? onScanned;
 
   void Function(String text)? onError;
 
@@ -79,13 +100,37 @@ class MRZController {
         onError?.call(call.arguments);
         break;
       case 'onParsed':
-        if (onParsed != null) {
-          final lines = _splitRecognized(call.arguments);
+        if (onParsed != null || onScanned != null) {
+          // Handle new response format (Map with 'mrz' and 'rawMrz')
+          final Map<dynamic, dynamic>? resultMap =
+              call.arguments is Map ? call.arguments : null;
+          final String mrzText = resultMap != null && resultMap['mrz'] != null
+              ? resultMap['mrz'] as String
+              : call.arguments is String
+                  ? call.arguments
+                  : '';
+
+          final String rawMrzText =
+              resultMap != null && resultMap['rawMrz'] != null
+                  ? resultMap['rawMrz'] as String
+                  : mrzText;
+
+          final lines = _splitRecognized(mrzText);
+          MRZResult? parsedResult;
+
           if (lines.isNotEmpty) {
-            final result = MRZParser.tryParse(lines);
-            if (result != null) {
-              onParsed!(result);
+            parsedResult = MRZParser.tryParse(lines);
+            if (parsedResult != null && onParsed != null) {
+              onParsed!(parsedResult);
             }
+          }
+
+          if (onScanned != null) {
+            onScanned!(MRZScannerResult(
+              mrz: mrzText,
+              rawMrz: rawMrzText,
+              parsedMrz: parsedResult,
+            ));
           }
         }
         break;

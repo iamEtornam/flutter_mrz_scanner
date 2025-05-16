@@ -5,7 +5,7 @@ import AudioToolbox
 import Vision
 
 public protocol MRZScannerViewDelegate: class {
-    func onParse(_ parsed: String?)
+    func onParse(_ parsed: String?, rawMrz: String?)
     func onError(_ error: String?)
     func onPhoto(_ data: Data?)
 }
@@ -83,6 +83,15 @@ public class MRZScannerView: UIView {
         var recognizedString: String?
         tesseract.performOCR(on: mrzTextImage) { recognizedString = $0 }
         return recognizedString
+    }
+    
+    fileprivate func extractMRZ(from input: String) -> String {
+        let lines = input.split(separator: "\n")
+        guard let lastLine = lines.last else { return input }
+        let mrzLength = lastLine.count
+        let mrzLines = lines.filter { $0.count == mrzLength }
+        let mrz = mrzLines.joined(separator: "\n")
+        return mrz
     }
     
     // MARK: Document Image from Photo cropping
@@ -236,7 +245,8 @@ extension MRZScannerView: AVCaptureVideoDataOutputSampleBufferDelegate {
             
             if let mrzTextImage = documentImage.cropping(to: mrzRegionRect) {
                 if let mrzResult = self.mrz(from: mrzTextImage) {
-                    self.delegate?.onParse(mrzResult)
+                    let extractedMrz = self.extractMRZ(from: mrzResult)
+                    self.delegate?.onParse(extractedMrz, rawMrz: mrzResult)
                 }
             }
         }
